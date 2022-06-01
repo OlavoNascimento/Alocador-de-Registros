@@ -1,17 +1,17 @@
 # Nome do executável
 EXECUTABLE=regalloc
-CC = g++
+CC = gcc
 
 COMMONFLAGS = -fstack-protector-all -O2 -I .
 CFLAGS = $(COMMONFLAGS)
-CPPFLAGS = -std=c++11 $(COMMONFLAGS)
+CPPFLAGS = -std=c99 $(COMMONFLAGS)
 BISONFLAGS =
 
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(wildcard *.c)
 LEXER_FILE=lexer.y.c
 PARSER_FILE=parser.tab.c
 
-OBJECTS = $(PARSER_FILE:.cc=.o) $(LEXER_FILE:.c=.o) $(SOURCES:.cpp=.o)
+OBJECTS = $(PARSER_FILE:.c=.o) $(LEXER_FILE:.c=.o) $(SOURCES:.c=.o)
 
 # Executar em modo de release.
 all: $(EXECUTABLE)

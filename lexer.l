@@ -1,11 +1,5 @@
 %{
-     #include <stdio.h>
-     #include <string.h>
-     #include <iostream>
-
      #include "parser.tab.h"
-
-     using namespace std;
 %}
 
 %option noyywrap
@@ -41,18 +35,14 @@
 }
 
 [0-9]+ {
-     char *end;
-     yylval.number = strtoul(yytext, &end, 10);
+     yylval.number = atoi(yytext);
      return NUMBER;
 }
 
 . {
-     cerr << "ERROR: lexer found invalid character: " << yytext << endl;
+     printf("ERROR: lexer found invalid character: %s\n", yytext);
      exit(1);
 }
 
-<<EOF>> {
-     return RA_EOF;
-}
 
 %%

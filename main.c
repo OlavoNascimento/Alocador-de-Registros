@@ -1,10 +1,10 @@
-#include <iostream>
-
 #include "parser.tab.h"
+#include "pilha.h"
 #include "utils.h"
 
-using namespace std;
+extern Pilha conflitos;
 
 int main() {
+    conflitos = pilha_criar(NULL);
     return yyparse();
 }

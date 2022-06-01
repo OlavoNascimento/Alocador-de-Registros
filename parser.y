@@ -1,12 +1,19 @@
 %{
-    #include <iostream>
+    #include <stdlib.h>
+
     #include "parser.tab.h"
+    #include "grafo.h"
+    #include "pilha.h"
+    #include "utils.h"
 
     int yylex();
     void yyerror(const char *);
 
-    using namespace std;
+    Grafo grafo = NULL;
+    Pilha conflitos = NULL;
 %}
+
+%define parse.error verbose
 
 %union {
     int number;
@@ -19,25 +26,31 @@
 %token GRAPH
 %token K
 %token NEW_LINE
-%token RA_EOF
 
-%start start
+%type <number> max_registers
+%type <number> name
+
+%start graph
 
 %%
-    start: graph start {}
-         | RA_EOF { exit(0); }
-    ;
+    graph: header body {
+        grafo_destruir(grafo);
+        pilha_destruir(conflitos);
+        grafo = NULL;
+    };
 
-    graph: header body;
-
-    header: name NEW_LINE max_registers NEW_LINE;
+    header: name NEW_LINE max_registers NEW_LINE {
+        grafo = grafo_criar($1, $3);
+    };
 
     name: GRAPH NUMBER COLON {
-        cout << "Grafo " << $2 << ":" << endl;
+        LOG_INFO("Grafo %d:\n", $2);
+        $$ = $2;
     };
 
     max_registers: K ASSIGN NUMBER {
-        cout << "K = " << $3 << endl;
+        LOG_INFO("K = %d\n", $3);
+        $$ = $3;
     };
 
     body: conflict
@@ -45,18 +58,33 @@
     ;
 
     conflict: NUMBER ARROW registers {
-        cout << "Edge: " << $1 << " ->> " << endl;
+        grafo_inserir_vertice(grafo, $1);
+        int *conflito = NULL;
+        while ((conflito = pilha_remover(conflitos)) != NULL) {
+           grafo_inserir_aresta(grafo, $1, *conflito);
+           free(conflito);
+       }
     };
 
-    registers: NUMBER { cout << "Register: " << $1 << endl; }
-            |  NUMBER registers { cout << "Register: " << $1 << endl; }
-
-    ;
+    registers: NUMBER {
+        LOG_INFO("Register: %d\n", $1);
+        int *conflito = malloc(sizeof *conflito);
+        *conflito = $1;
+        pilha_inserir(conflitos, conflito);
+    }
+             | NUMBER registers {
+        LOG_INFO("Register: %d\n", $1);
+        int *conflito = malloc(sizeof *conflito);
+        *conflito = $1;
+        pilha_inserir(conflitos, conflito);
+    };
 
 %%
 
-// Report an error to the user.
 void yyerror (const char *msg) {
-    cerr << "ERROR: " << msg << endl;
+    grafo_destruir(grafo);
+    pilha_destruir(conflitos);
+    printf("ERROR: %s\n", msg);
+    exit(1);
 }
 

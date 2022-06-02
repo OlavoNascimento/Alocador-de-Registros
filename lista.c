@@ -138,6 +138,8 @@ ListaNo lista_inserir_depois(Lista lista, ListaInfo info, ListaNo no) {
 }
 
 ListaInfo lista_remover(Lista lista, ListaNo no) {
+    if (no == NULL)
+        return NULL;
     ListaNo no_anterior = no->anterior;
     ListaNo no_proximo = no->proximo;
 
@@ -160,7 +162,7 @@ ListaInfo lista_remover(Lista lista, ListaNo no) {
     return info;
 }
 
-ListaNo lista_buscar(Lista lista, const char *id) {
+ListaNo lista_buscar(Lista lista, int id) {
     if (lista->obter_identificador_info == NULL) {
         LOG_AVISO(
             "Não é possível buscar em uma lista que não possui a função obter_identificador_info "
@@ -169,8 +171,8 @@ ListaNo lista_buscar(Lista lista, const char *id) {
     }
 
     for_each_lista(no, lista) {
-        const char *id_atual = lista->obter_identificador_info(no->info);
-        if (strcmp(id_atual, id) == 0)
+        int id_atual = lista->obter_identificador_info(no->info);
+        if (id_atual == id)
             return no;
     }
     return NULL;
@@ -181,13 +183,6 @@ void lista_trocar_info(ListaNo no1, ListaNo no2) {
     ListaInfo temp = lista_obter_info(no1);
     no1->info = lista_obter_info(no2);
     no2->info = temp;
-}
-
-// Aplica uma função a todas as informações de uma lista.
-void lista_map(Lista lis, MapInfoLista f, void *extra) {
-    for_each_lista(no, lis) {
-        f(lista_obter_info(no), extra);
-    }
 }
 
 int lista_obter_tamanho(Lista lista) {

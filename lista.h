@@ -1,6 +1,8 @@
 #ifndef LISTA_H
 #define LISTA_H
 
+#include <stddef.h>
+
 /*
 Implementa uma Lista. Uma lista vazia é criada pela operação lista_criar(), podendo receber uma
 função para buscar informações e outra para destruí-las ao liberar a lista.
@@ -76,7 +78,7 @@ Acessa um nó da lista.
 O id passado deve ser válido. A lista deve ter uma função de busca registrada!.
 Retorna o endereço do nó.
 */
-ListaNo lista_buscar(Lista lista, const char *id);
+ListaNo lista_buscar(Lista lista, int id);
 
 /*
 Troca as informações armazenadas em dois nós.

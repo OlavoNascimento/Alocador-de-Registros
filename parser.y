@@ -11,6 +11,12 @@
 
     Grafo grafo = NULL;
     Pilha conflitos = NULL;
+    Pilha arestas = NULL;
+
+    struct Aresta {
+        int origem;
+        int destino;
+    };
 %}
 
 %define parse.error verbose
@@ -34,9 +40,17 @@
 
 %%
     graph: header body {
-        grafo_destruir(grafo);
+        struct Aresta *aresta = NULL;
+        while ((aresta = pilha_remover(arestas)) != NULL) {
+            // Como todos os vértices estão presentes no grafo, as arestas são inseridas.
+            grafo_inserir_aresta(grafo, aresta->origem, aresta->destino);
+            free(aresta);
+        }
+
         pilha_destruir(conflitos);
-        grafo = NULL;
+        pilha_destruir(arestas);
+        conflitos = NULL;
+        arestas = NULL;
     };
 
     header: name NEW_LINE max_registers NEW_LINE {
@@ -44,36 +58,37 @@
     };
 
     name: GRAPH NUMBER COLON {
-        LOG_INFO("Grafo %d:\n", $2);
         $$ = $2;
     };
 
     max_registers: K ASSIGN NUMBER {
-        LOG_INFO("K = %d\n", $3);
         $$ = $3;
     };
 
     body: conflict
+        | conflict NEW_LINE
         | conflict NEW_LINE body
     ;
 
     conflict: NUMBER ARROW registers {
         grafo_inserir_vertice(grafo, $1);
+
         int *conflito = NULL;
         while ((conflito = pilha_remover(conflitos)) != NULL) {
-           grafo_inserir_aresta(grafo, $1, *conflito);
-           free(conflito);
+            // Armazena a aresta para ser inserida após todos os vértices serem lidos.
+            struct Aresta *aresta = malloc(sizeof *aresta);
+            aresta->origem = $1;
+            aresta->destino= *conflito;
+            pilha_inserir(arestas, aresta);
+            free(conflito);
        }
     };
 
     registers: NUMBER {
-        LOG_INFO("Register: %d\n", $1);
         int *conflito = malloc(sizeof *conflito);
         *conflito = $1;
         pilha_inserir(conflitos, conflito);
-    }
-             | NUMBER registers {
-        LOG_INFO("Register: %d\n", $1);
+    } | NUMBER registers {
         int *conflito = malloc(sizeof *conflito);
         *conflito = $1;
         pilha_inserir(conflitos, conflito);

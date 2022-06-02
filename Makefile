@@ -26,6 +26,10 @@ $(EXECUTABLE): $(OBJECTS)
 	@echo "Criando executável..."
 	$(CC) -o $@ $^
 
+main.o: main.c $(PARSER_FILE)
+	@echo "Compilando $^..."
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ main.c
+
 # Específica que cada arquivo .o deve ser gerado a partir de seu correspondente .c
 %.o: %.c
 # $@ é o alvo atual (arquivo .o)

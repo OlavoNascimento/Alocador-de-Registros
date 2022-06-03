@@ -11,9 +11,9 @@
 
     Grafo grafo = NULL;
     Pilha conflitos = NULL;
-    Pilha arestas = NULL;
+    Lista arestas = NULL;
 
-    struct Aresta {
+    struct ParserAresta {
         int origem;
         int destino;
     };
@@ -40,15 +40,17 @@
 
 %%
     graph: header body {
-        struct Aresta *aresta = NULL;
-        while ((aresta = pilha_remover(arestas)) != NULL) {
+        for_each_lista(no, arestas) {
+            struct ParserAresta *arestaInfo = lista_obter_info(no);
             // Como todos os vértices estão presentes no grafo, as arestas são inseridas.
-            grafo_inserir_aresta(grafo, aresta->origem, aresta->destino);
-            free(aresta);
+            Aresta aresta = grafo_criar_aresta(grafo, arestaInfo->origem, arestaInfo->destino);
+            if(aresta != NULL)
+                grafo_inserir_aresta(aresta);
+            free(arestaInfo);
         }
 
         pilha_destruir(conflitos);
-        pilha_destruir(arestas);
+        lista_destruir(arestas);
         conflitos = NULL;
         arestas = NULL;
     };
@@ -71,15 +73,15 @@
     ;
 
     conflict: NUMBER ARROW registers {
-        grafo_inserir_vertice(grafo, $1);
+        grafo_inserir_vertice(grafo, grafo_criar_vertice($1));
 
         int *conflito = NULL;
         while ((conflito = pilha_remover(conflitos)) != NULL) {
             // Armazena a aresta para ser inserida após todos os vértices serem lidos.
-            struct Aresta *aresta = malloc(sizeof *aresta);
+            struct ParserAresta *aresta = malloc(sizeof *aresta);
             aresta->origem = $1;
-            aresta->destino= *conflito;
-            pilha_inserir(arestas, aresta);
+            aresta->destino = *conflito;
+            lista_inserir_final(arestas, aresta);
             free(conflito);
        }
     };

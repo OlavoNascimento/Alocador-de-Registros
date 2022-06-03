@@ -47,6 +47,13 @@ Lista lista_criar(ObterIdentificadorLista obter_identificador_info,
                   ListaDestruirInfo destruir_info);
 
 /*
+Insere um elemento no início da lista.
+Ambos os parâmetros não podem ser nulos, o parâmetro lista deve ser uma lista existente.
+Retorna o endereço para o elemento adicionado.
+*/
+ListaNo lista_inserir_inicio(Lista lista, const ListaInfo info);
+
+/*
 Insere um elemento no final da lista.
 Ambos os parâmetros não podem ser nulos, o parâmetro lista deve ser uma lista existente.
 Retorna o endereço para o elemento adicionado.

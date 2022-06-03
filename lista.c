@@ -35,6 +35,33 @@ Lista lista_criar(ObterIdentificadorLista obter_identificador_info,
     return lista;
 }
 
+ListaNo lista_inserir_inicio(Lista lista, const ListaInfo info) {
+    if (info == NULL) {
+        LOG_AVISO("Informação nula passada para lista_inserir_inicio!\n");
+        return NULL;
+    }
+
+    ListaNo novo_no = malloc(sizeof *novo_no);
+    if (novo_no == NULL) {
+        LOG_ERRO("Falha ao alocar espaço para um novo elemento de uma lista!\n");
+        return NULL;
+    }
+    novo_no->info = info;
+    novo_no->anterior = NULL;
+
+    if (lista->primeiro == NULL) {
+        lista->primeiro = novo_no;
+        novo_no->proximo = NULL;
+    } else {
+        lista->primeiro->anterior = novo_no;
+        novo_no->proximo = lista->primeiro;
+    }
+
+    lista->primeiro = novo_no;
+    lista->tamanho++;
+    return novo_no;
+}
+
 ListaNo lista_inserir_final(Lista lista, const ListaInfo info) {
     if (info == NULL) {
         LOG_AVISO("Informação nula passada para lista_inserir_final!\n");

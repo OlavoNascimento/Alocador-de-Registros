@@ -10,6 +10,11 @@
 
 typedef bool Comparador(int a, int b);
 
+struct Aresta_s {
+    Vertice origem;
+    Vertice destino;
+};
+
 struct Vertice_s {
     Lista arestas;
     int registrador;
@@ -42,7 +47,11 @@ Grafo grafo_criar(int id, int max_cores) {
     return grafo;
 }
 
-Vertice grafo_inserir_vertice(Grafo grafo, int registrador) {
+int aresta_obter_destino(Aresta aresta) {
+    return aresta->destino->registrador;
+}
+
+Vertice grafo_criar_vertice(int registrador) {
     Vertice vertice = malloc(sizeof *vertice);
     if (vertice == NULL) {
         LOG_ERRO("Falha ao alocar memória!\n");
@@ -51,36 +60,48 @@ Vertice grafo_inserir_vertice(Grafo grafo, int registrador) {
     vertice->registrador = registrador;
     vertice->cor = -1;
 
-    vertice->arestas = lista_criar((ObterIdentificadorLista *) vertice_obter_registrador, NULL);
+    vertice->arestas = lista_criar((ObterIdentificadorLista *) aresta_obter_destino, free);
     if (vertice->arestas == NULL) {
         free(vertice);
         LOG_ERRO("Falha ao alocar memória!\n");
         return NULL;
     }
-
-    lista_inserir_final(grafo->vertices, vertice);
-    LOG_INFO("Registrador físico %d inserido no grafo\n", registrador);
-
     return vertice;
 }
 
-void grafo_inserir_aresta(Grafo grafo, int virtual, int conflito) {
-    ListaInfo busca_origem = lista_buscar(grafo->vertices, virtual);
+void grafo_inserir_vertice(Grafo grafo, Vertice vert) {
+    lista_inserir_final(grafo->vertices, vert);
+    LOG_INFO("Registrador físico %d com grau %d inserido no grafo\n", vert->registrador,
+             lista_obter_tamanho(vert->arestas));
+}
+
+Aresta grafo_criar_aresta(Grafo grafo, int origem, int destino) {
+    ListaInfo busca_origem = lista_buscar(grafo->vertices, origem);
     if (busca_origem == NULL) {
-        LOG_ERRO("Registrador de origem %d não foi encontrado nos vértices do grafo!\n", virtual);
-        return;
+        LOG_ERRO("Registrador de origem %d não foi encontrado nos vértices do grafo!\n", origem);
+        return NULL;
     }
-    Vertice vert_origem = lista_obter_info(busca_origem);
 
-    ListaInfo busca_destino = lista_buscar(grafo->vertices, conflito);
+    ListaInfo busca_destino = lista_buscar(grafo->vertices, destino);
     if (busca_destino == NULL) {
-        LOG_ERRO("Registrador de destino %d não foi encontrado nos vértices do grafo!\n", conflito);
-        return;
+        LOG_ERRO("Registrador de destino %d não foi encontrado nos vértices do grafo!\n", destino);
+        return NULL;
     }
-    Vertice vert_destino = lista_obter_info(busca_destino);
+    Aresta aresta = malloc(sizeof *aresta);
+    if (aresta == NULL) {
+        LOG_ERRO("Falha ao alocar memória!\n");
+        return NULL;
+    }
+    aresta->origem = lista_obter_info(busca_origem);
+    aresta->destino = lista_obter_info(busca_destino);
+    return aresta;
+}
 
-    lista_inserir_final(vert_origem->arestas, vert_destino);
-    LOG_INFO("Conflito %d do registrador físico %d inserido no grafo\n", conflito, virtual);
+void grafo_inserir_aresta(Aresta aresta) {
+    lista_inserir_final(aresta->origem->arestas, aresta);
+    LOG_INFO("Conflito %d -> %d inserido no grafo, vértice %d agora tem grau %d\n",
+             aresta->origem->registrador, aresta->destino->registrador, aresta->origem->registrador,
+             lista_obter_tamanho(aresta->origem->arestas));
 }
 
 int grafo_obter_id(Grafo grafo) {
@@ -106,17 +127,20 @@ void grafo_destruir(Grafo grafo) {
     free(grafo);
 }
 
-void vertice_diminuir_grau_arestas(Vertice vert) {
-    if (vert == NULL)
-        return;
+void vertice_diminuir_grau_arestas(Vertice vert, Pilha arestas_removidas) {
     for_each_lista(no, vert->arestas) {
-        Vertice destino = lista_obter_info(no);
-        ListaNo conexao = lista_buscar(destino->arestas, vert->registrador);
-        lista_remover(destino->arestas, conexao);
+        Aresta aresta = lista_obter_info(no);
+        ListaNo conexao = lista_buscar(aresta->destino->arestas, aresta->origem->registrador);
+        LOG_INFO("Diminuindo grau %d -> %d\n", aresta->origem->registrador,
+                 aresta->destino->registrador);
+
+        Aresta removido = lista_remover(aresta->destino->arestas, conexao);
+        // Faz uma cópia da aresta para recriar o grafo quando essa execução com n cores terminar.
+        pilha_inserir(arestas_removidas, removido);
     }
 }
 
-Vertice grafo_remover_grau_menor(Grafo grafo) {
+Vertice grafo_remover_grau_menor(Grafo grafo, int max_cores) {
     Vertice antigo = NULL;
     int grau_comp = 0;
     ListaNo no_comp = NULL;
@@ -125,7 +149,7 @@ Vertice grafo_remover_grau_menor(Grafo grafo) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau < grafo->max_cores) {
+        if (grau < max_cores) {
             if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
                 // Graus iguais, o menor registrador virtual é selecionado.
                 antigo = vert;
@@ -139,11 +163,10 @@ Vertice grafo_remover_grau_menor(Grafo grafo) {
         }
     }
 
-    vertice_diminuir_grau_arestas(antigo);
     return lista_remover(grafo->vertices, no_comp);
 }
 
-Vertice grafo_remover_grau_maior(Grafo grafo) {
+Vertice grafo_remover_grau_maior(Grafo grafo, int max_cores) {
     Vertice antigo = NULL;
     int grau_comp = 0;
     ListaNo no_comp = NULL;
@@ -152,8 +175,8 @@ Vertice grafo_remover_grau_maior(Grafo grafo) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau >= grafo->max_cores) {
-            if (grau == grau_comp && vert->registrador < antigo->registrador) {
+        if (grau >= max_cores) {
+            if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
                 // Graus iguais, o menor registrador virtual é selecionado.
                 antigo = vert;
                 no_comp = no;
@@ -166,7 +189,6 @@ Vertice grafo_remover_grau_maior(Grafo grafo) {
         }
     }
 
-    vertice_diminuir_grau_arestas(antigo);
     return lista_remover(grafo->vertices, no_comp);
 }
 
@@ -176,48 +198,52 @@ int grafo_obter_tamanho(Grafo grafo) {
 
 // Remove os nós com menor grau quando algum nó tem grau < que o número de cores.
 // Remove os nós com maior grau quando todos os nós tem grau >= que o número de cores.
-Pilha simplificar(Grafo grafo) {
-    Pilha memoria = pilha_criar((PilhaDestruirInfo *) vertice_destruir);
+Pilha simplificar(Grafo grafo, int max_cores, Pilha vertices_removidos, Pilha arestas_removidas) {
+    Pilha memoria = pilha_criar(NULL);
     Vertice removido = NULL;
     while (grafo_obter_tamanho(grafo) > 0) {
-        removido = grafo_remover_grau_menor(grafo);
+        removido = grafo_remover_grau_menor(grafo, max_cores);
         if (removido != NULL) {
             printf("Push: %d\n", removido->registrador);
             pilha_inserir(memoria, removido);
+            vertice_diminuir_grau_arestas(removido, arestas_removidas);
+            // Salva o vértices para recriar o grafo após esse execução de alocação com n cores.
+            pilha_inserir(vertices_removidos, removido);
         } else {
-            removido = grafo_remover_grau_maior(grafo);
+            removido = grafo_remover_grau_maior(grafo, max_cores);
             if (removido != NULL) {
                 printf("Push: %d *\n", removido->registrador);
                 pilha_inserir(memoria, removido);
+                vertice_diminuir_grau_arestas(removido, arestas_removidas);
+                // Salva o vértices para recriar o grafo após esse execução de alocação com n cores.
+                pilha_inserir(vertices_removidos, removido);
             }
         }
     }
     return memoria;
 }
 
-void definir_registradores(int n, Pilha memoria) {
-    Pilha processados = pilha_criar((PilhaDestruirInfo *) vertice_destruir);
+bool definir_registradores(int max_cores, Pilha memoria) {
+    bool status = true;
     // Vetor marcando as cores em uso.
-    bool *cores_em_uso = calloc(sizeof *cores_em_uso, n);
+    bool *cores_em_uso = calloc(sizeof *cores_em_uso, max_cores);
 
     Vertice vert = NULL;
     while ((vert = pilha_remover(memoria)) != NULL) {
-        pilha_inserir(processados, vert);
-
         // A cada vértice os registradores disponíveis são reiniciados.
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < max_cores; i++)
             cores_em_uso[i] = false;
 
         // Marca as cores utilizadas pelos registradores conflitantes.
         for_each_lista(no, vert->arestas) {
-            Vertice conflito = lista_obter_info(no);
-            if (conflito->cor != -1)
-                cores_em_uso[conflito->cor] = true;
+            Aresta aresta = lista_obter_info(no);
+            if (aresta->destino->cor != -1)
+                cores_em_uso[aresta->destino->cor] = true;
         }
 
         // Encontra a posição da primeira cor que não está em uso.
         int registrador_livre = -1;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < max_cores; i++) {
             if (!cores_em_uso[i]) {
                 registrador_livre = i;
                 break;
@@ -231,21 +257,44 @@ void definir_registradores(int n, Pilha memoria) {
             // Não há nenhuma cor disponível para o registrador atual.
             // Cancela a alocação de registradores com n cores.
             printf("Pop: %d -> NO COLOR AVAILABLE\n", vert->registrador);
+            status = false;
             break;
         }
     }
 
     free(cores_em_uso);
-    pilha_destruir(processados);
+    return status;
 }
 
-void alocar(Grafo grafo, int n) {
-    printf("----------------------------------------\n");
-    printf("K=%d\n\n", n);
+void reconstruir_grafo(Grafo grafo, Pilha vertices_removidos, Pilha aresta_removidas) {
+    Vertice vert = NULL;
+    while ((vert = pilha_remover(vertices_removidos)) != NULL) {
+        grafo_inserir_vertice(grafo, vert);
+        vert->cor = -1;
+    }
 
-    Pilha memoria = simplificar(grafo);
-    definir_registradores(n, memoria);
+    Aresta aresta = NULL;
+    while ((aresta = pilha_remover(aresta_removidas)) != NULL) {
+        grafo_inserir_aresta(aresta);
+    }
+}
+
+bool alocar(Grafo grafo, int max_cores) {
+    bool status = true;
+    printf("K = %d\n\n", max_cores);
+
+    Pilha vertices_removidos = pilha_criar(NULL);
+    Pilha arestas_removidas = pilha_criar(NULL);
+
+    Pilha memoria = simplificar(grafo, max_cores, vertices_removidos, arestas_removidas);
+    status = definir_registradores(max_cores, memoria);
+
+    printf("----------------------------------------\n");
+
+    reconstruir_grafo(grafo, vertices_removidos, arestas_removidas);
+
     pilha_destruir(memoria);
-
-    printf("----------------------------------------\n");
+    pilha_destruir(arestas_removidas);
+    pilha_destruir(vertices_removidos);
+    return status;
 }

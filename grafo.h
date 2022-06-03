@@ -11,9 +11,13 @@ typedef struct Vertice_s *Vertice;
 
 Grafo grafo_criar(int id, int max_cores);
 
-Vertice grafo_inserir_vertice(Grafo grafo, int registrador);
+Vertice grafo_criar_vertice(int registrador);
 
-void grafo_inserir_aresta(Grafo grafo, int virtual, int conflito);
+void grafo_inserir_vertice(Grafo grafo, Vertice vert);
+
+Aresta grafo_criar_aresta(Grafo grafo, int origem, int destino);
+
+void grafo_inserir_aresta(Aresta aresta);
 
 int grafo_obter_id(Grafo grafo);
 
@@ -23,6 +27,6 @@ void vertice_destruir(Vertice vertice);
 
 void grafo_destruir(Grafo grafo);
 
-void alocar(Grafo grafo, int n);
+bool alocar(Grafo grafo, int n);
 
 #endif

@@ -15,7 +15,12 @@ void construir() {
 
 int main() {
     construir();
-    simplificar(grafo);
+    printf("Graph %d -> Physical Registers: %d\n", grafo_obter_id(grafo),
+           grafo_obter_max_cores(grafo));
+    printf("----------------------------------------\n");
+    for (int i = grafo_obter_max_cores(grafo); i > 1; i--) {
+        alocar(grafo, i);
+    }
 
     grafo_destruir(grafo);
     return 0;

@@ -7,7 +7,19 @@
     "list": "cpp",
     "parser.tab.h": "c",
     "system_error": "c",
-    "lista.h": "c"
+    "lista.h": "c",
+    "random": "c",
+    "limits": "c",
+    "semaphore": "c",
+    "valarray": "c",
+    "grafo.h": "c"
   },
-  "cSpell.words": ["fisico", "maximo", "vertice"]
+  "cSpell.words": [
+    "conexao",
+    "fisico",
+    "maximo",
+    "minimo",
+    "vertice",
+    "yyparse"
+  ]
 }

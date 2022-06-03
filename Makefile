@@ -2,9 +2,7 @@
 EXECUTABLE=regalloc
 CC = gcc
 
-COMMONFLAGS = -fstack-protector-all -O2 -I .
-CFLAGS = $(COMMONFLAGS)
-CPPFLAGS = -std=c99 $(COMMONFLAGS)
+CFLAGS = -fstack-protector-all -O2 -I .
 BISONFLAGS =
 
 SOURCES = $(wildcard *.c)
@@ -18,7 +16,6 @@ all: $(EXECUTABLE)
 
 # Executar em modo de debug.
 debug: CFLAGS += -W -Wall -g -D REGALLOC_DEBUG
-debug: CPPFLAGS += -W -Wall -g -D REGALLOC_DEBUG
 debug: BISONFLAGS += -Wconflicts-sr -Wcounterexamples -t
 debug: $(EXECUTABLE)
 
@@ -28,14 +25,14 @@ $(EXECUTABLE): $(OBJECTS)
 
 main.o: main.c $(PARSER_FILE)
 	@echo "Compilando $^..."
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ main.c
+	$(CC) $(CFLAGS) -c -o $@ main.c
 
 # Específica que cada arquivo .o deve ser gerado a partir de seu correspondente .c
 %.o: %.c
 # $@ é o alvo atual (arquivo .o)
 # $^ representa a dependência atual (arquivo .c)
 	@echo "Compilando $^..."
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 # Gera o código do lexer.
 $(LEXER_FILE): lexer.l $(PARSER_FILE)

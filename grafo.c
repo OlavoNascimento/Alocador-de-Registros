@@ -42,6 +42,11 @@ Grafo grafo_criar(int id, int max_cores) {
     grafo->max_cores = max_cores;
     grafo->vertices = lista_criar((ObterIdentificadorLista *) vertice_obter_registrador,
                                   (ListaDestruirInfo *) vertice_destruir);
+    for (int i = 0; i < grafo->max_cores; i++) {
+        Vertice vert = grafo_criar_vertice(i);
+        vert->cor = i;
+        grafo_inserir_vertice(grafo, vert);
+    }
 
     LOG_INFO("Grafo criado, id: %d, cores: %d\n", id, max_cores);
     return grafo;
@@ -149,7 +154,7 @@ Vertice grafo_remover_grau_menor(Grafo grafo, int max_cores) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau < max_cores) {
+        if (grau < max_cores && vert->registrador >= grafo->max_cores) {
             if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
                 // Graus iguais, o menor registrador virtual é selecionado.
                 antigo = vert;
@@ -175,7 +180,7 @@ Vertice grafo_remover_grau_maior(Grafo grafo, int max_cores) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau >= max_cores) {
+        if (grau >= max_cores && vert->registrador >= grafo->max_cores) {
             if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
                 // Graus iguais, o menor registrador virtual é selecionado.
                 antigo = vert;
@@ -201,7 +206,8 @@ int grafo_obter_tamanho(Grafo grafo) {
 Pilha simplificar(Grafo grafo, int max_cores, Pilha vertices_removidos, Pilha arestas_removidas) {
     Pilha memoria = pilha_criar(NULL);
     Vertice removido = NULL;
-    while (grafo_obter_tamanho(grafo) > 0) {
+    bool vertice_foi_removido = true;
+    while (vertice_foi_removido) {
         removido = grafo_remover_grau_menor(grafo, max_cores);
         if (removido != NULL) {
             printf("Push: %d\n", removido->registrador);
@@ -217,6 +223,8 @@ Pilha simplificar(Grafo grafo, int max_cores, Pilha vertices_removidos, Pilha ar
                 vertice_diminuir_grau_arestas(removido, arestas_removidas);
                 // Salva o vértices para recriar o grafo após esse execução de alocação com n cores.
                 pilha_inserir(vertices_removidos, removido);
+            } else {
+                vertice_foi_removido = false;
             }
         }
     }
@@ -270,7 +278,6 @@ void reconstruir_grafo(Grafo grafo, Pilha vertices_removidos, Pilha aresta_remov
     Vertice vert = NULL;
     while ((vert = pilha_remover(vertices_removidos)) != NULL) {
         grafo_inserir_vertice(grafo, vert);
-        vert->cor = -1;
     }
 
     Aresta aresta = NULL;
@@ -279,9 +286,19 @@ void reconstruir_grafo(Grafo grafo, Pilha vertices_removidos, Pilha aresta_remov
     }
 }
 
+void preparar_cores(Grafo grafo, int max_cores) {
+    for_each_lista(no, grafo->vertices) {
+        Vertice vert = lista_obter_info(no);
+        if (vert->registrador >= max_cores)
+            vert->cor = -1;
+    }
+}
+
 bool alocar(Grafo grafo, int max_cores) {
     bool status = true;
     printf("K = %d\n\n", max_cores);
+
+    preparar_cores(grafo, max_cores);
 
     Pilha vertices_removidos = pilha_criar(NULL);
     Pilha arestas_removidas = pilha_criar(NULL);

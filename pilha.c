@@ -37,6 +37,8 @@ int pilha_obter_tamanho(Pilha pilha) {
 }
 
 void pilha_inserir(Pilha pilha, PilhaInfo info) {
+    if (info == NULL)
+        return;
     struct No *novo_no = malloc(sizeof *novo_no);
     if (novo_no == NULL) {
         LOG_ERRO("Falha ao alocar memória para novo elemento da pilha!\n");

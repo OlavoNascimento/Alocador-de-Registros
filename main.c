@@ -18,24 +18,27 @@ void construir() {
 
 int main() {
     construir();
-    printf("Graph %d -> Physical Registers: %d\n", grafo_obter_id(grafo),
-           grafo_obter_max_cores(grafo));
+    const int max_cores = grafo_obter_max_cores(grafo);
+    printf("Graph %d -> Physical Registers: %d\n", grafo_obter_id(grafo), max_cores);
     printf("----------------------------------------\n");
     printf("----------------------------------------\n");
-    bool *status = calloc(sizeof *status, grafo_obter_max_cores(grafo) + 1);
-    for (int i = 0; i < grafo_obter_max_cores(grafo); i++)
+    bool *status = calloc(sizeof *status, max_cores + 1);
+    for (int i = 0; i < max_cores; i++)
         status[i] = true;
 
-    for (int i = grafo_obter_max_cores(grafo); i > 1; i--) {
+    for (int i = max_cores; i > 1; i--) {
         status[i] = alocar(grafo, i);
         LOG_AVISO("Resultado para alocação com %d cores: %d!\n", i, status[i]);
     }
     printf("----------------------------------------\n");
-    for (int i = grafo_obter_max_cores(grafo); i > 1; i--) {
+    for (int i = max_cores; i > 1; i--) {
+        if (i != max_cores)
+            printf("\n");
         if (status[i])
-            printf("Graph %d -> K = %d: Successful Allocation\n", grafo_obter_id(grafo), i);
+            printf("Graph %d -> K = %*d: Successful Allocation", grafo_obter_id(grafo),
+                   max_cores / 10, i);
         else {
-            printf("Graph %d -> K = %d: SPILL\n", grafo_obter_id(grafo), i);
+            printf("Graph %d -> K = %*d: SPILL", grafo_obter_id(grafo), max_cores / 10, i);
         }
     }
     grafo_destruir(grafo);

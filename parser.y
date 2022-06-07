@@ -22,24 +22,24 @@
 %define parse.error verbose
 
 %union {
-    int number;
+    int numero;
 }
 
-%token <number> NUMBER
-%token ARROW
-%token ASSIGN
-%token COLON
-%token GRAPH
+%token <numero> NUMERO
+%token GRAFO
+%token IGUAL
 %token K
-%token NEW_LINE
+%token NOVA_LINHA
+%token SETA
+%token VIRGULA
 
-%type <number> max_registers
-%type <number> name
+%type <numero> max_registradores
+%type <numero> nome
 
-%start graph
+%start grafo
 
 %%
-    graph: header body {
+    grafo: cabecalho corpo {
         for_each_lista(no, arestas) {
             struct ParserAresta *arestaInfo = lista_obter_info(no);
             // Como todos os vértices estão presentes no grafo, as arestas são inseridas.
@@ -55,24 +55,24 @@
         arestas = NULL;
     };
 
-    header: name NEW_LINE max_registers NEW_LINE {
+    cabecalho: nome NOVA_LINHA max_registradores NOVA_LINHA {
         grafo = grafo_criar($1, $3);
     };
 
-    name: GRAPH NUMBER COLON {
+    nome: GRAFO NUMERO VIRGULA {
         $$ = $2;
     };
 
-    max_registers: K ASSIGN NUMBER {
+    max_registradores: K IGUAL NUMERO {
         $$ = $3;
     };
 
-    body: conflict
-        | conflict NEW_LINE
-        | conflict NEW_LINE body
+    corpo:conflito
+        | conflito NOVA_LINHA
+        | conflito NOVA_LINHA corpo
     ;
 
-    conflict: NUMBER ARROW registers {
+    conflito: NUMERO SETA registradores {
         grafo_inserir_vertice(grafo, grafo_criar_vertice($1));
 
         int *conflito = NULL;
@@ -86,11 +86,11 @@
        }
     };
 
-    registers: NUMBER {
+    registradores: NUMERO {
         int *conflito = malloc(sizeof *conflito);
         *conflito = $1;
         pilha_inserir(conflitos, conflito);
-    } | NUMBER registers {
+    } | NUMERO registradores {
         int *conflito = malloc(sizeof *conflito);
         *conflito = $1;
         pilha_inserir(conflitos, conflito);

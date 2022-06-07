@@ -9,7 +9,7 @@
 %%
 
 "Grafo" {
-    return GRAPH;
+    return GRAFO;
 }
 
 "K" {
@@ -17,26 +17,26 @@
 }
 
 ":" {
-     return COLON;
+     return VIRGULA;
 }
 
 "=" {
-     return ASSIGN;
+     return IGUAL;
 }
 
 "-->" {
-     return ARROW;
+     return SETA;
 }
 
 (" "|[\t]) {}
 
 [\n] {
-     return NEW_LINE;
+     return NOVA_LINHA;
 }
 
 [0-9]+ {
-     yylval.number = atoi(yytext);
-     return NUMBER;
+     yylval.numero = atoi(yytext);
+     return NUMERO;
 }
 
 . {

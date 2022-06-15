@@ -146,55 +146,49 @@ void vertice_diminuir_grau_arestas(Vertice vert, Pilha arestas_removidas) {
 }
 
 Vertice grafo_remover_grau_menor(Grafo grafo, int max_cores) {
-    Vertice antigo = NULL;
-    int grau_comp = 0;
-    ListaNo no_comp = NULL;
+    Vertice vert_min = NULL;
+    int grau_min = 0;
+    ListaNo no_min = NULL;
 
     for_each_lista(no, grafo->vertices) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau < max_cores && vert->registrador >= grafo->max_cores) {
-            if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
-                // Graus iguais, o menor registrador virtual é selecionado.
-                antigo = vert;
-                no_comp = no;
-                grau_comp = lista_obter_tamanho(antigo->arestas);
-            } else if (grau < grau_comp || antigo == NULL) {
-                antigo = vert;
-                no_comp = no;
-                grau_comp = lista_obter_tamanho(antigo->arestas);
-            }
+        if (grau >= max_cores || vert->registrador < grafo->max_cores)
+            continue;
+
+        if ((grau == grau_min && vert_min != NULL && vert->registrador < vert_min->registrador) ||
+            grau < grau_min || vert_min == NULL) {
+            vert_min = vert;
+            no_min = no;
+            grau_min = lista_obter_tamanho(vert_min->arestas);
         }
     }
 
-    return lista_remover(grafo->vertices, no_comp);
+    return lista_remover(grafo->vertices, no_min);
 }
 
 Vertice grafo_remover_grau_maior(Grafo grafo, int max_cores) {
-    Vertice antigo = NULL;
-    int grau_comp = 0;
-    ListaNo no_comp = NULL;
+    Vertice vert_max = NULL;
+    int grau_max = 0;
+    ListaNo no_max = NULL;
 
     for_each_lista(no, grafo->vertices) {
         const Vertice vert = lista_obter_info(no);
         const int grau = lista_obter_tamanho(vert->arestas);
 
-        if (grau >= max_cores && vert->registrador >= grafo->max_cores) {
-            if (grau == grau_comp && antigo != NULL && vert->registrador < antigo->registrador) {
-                // Graus iguais, o menor registrador virtual é selecionado.
-                antigo = vert;
-                no_comp = no;
-                grau_comp = lista_obter_tamanho(antigo->arestas);
-            } else if (grau > grau_comp || antigo == NULL) {
-                antigo = vert;
-                no_comp = no;
-                grau_comp = lista_obter_tamanho(antigo->arestas);
-            }
+        if (grau < max_cores || vert->registrador < grafo->max_cores)
+            continue;
+
+        if ((grau == grau_max && vert_max != NULL && vert->registrador < vert_max->registrador) ||
+            grau > grau_max || vert_max == NULL) {
+            vert_max = vert;
+            no_max = no;
+            grau_max = lista_obter_tamanho(vert_max->arestas);
         }
     }
 
-    return lista_remover(grafo->vertices, no_comp);
+    return lista_remover(grafo->vertices, no_max);
 }
 
 int grafo_obter_tamanho(Grafo grafo) {
@@ -213,7 +207,7 @@ Pilha simplificar(Grafo grafo, int max_cores, Pilha vertices_removidos, Pilha ar
             printf("Push: %d\n", removido->registrador);
             pilha_inserir(memoria, removido);
             vertice_diminuir_grau_arestas(removido, arestas_removidas);
-            // Salva o vértices para recriar o grafo após esse execução de alocação com n cores.
+            // Salva o vértice para recriar o grafo após esse execução de alocação com n cores.
             pilha_inserir(vertices_removidos, removido);
         } else {
             removido = grafo_remover_grau_maior(grafo, max_cores);
@@ -221,7 +215,7 @@ Pilha simplificar(Grafo grafo, int max_cores, Pilha vertices_removidos, Pilha ar
                 printf("Push: %d *\n", removido->registrador);
                 pilha_inserir(memoria, removido);
                 vertice_diminuir_grau_arestas(removido, arestas_removidas);
-                // Salva o vértices para recriar o grafo após esse execução de alocação com n cores.
+                // Salva o vértice para recriar o grafo após esse execução de alocação com n cores.
                 pilha_inserir(vertices_removidos, removido);
             } else {
                 vertice_foi_removido = false;

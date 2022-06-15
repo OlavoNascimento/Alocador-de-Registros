@@ -23,16 +23,12 @@ $(EXECUTABLE): $(OBJECTS)
 	@echo "Criando executável..."
 	$(CC) -o $@ $^
 
-main.o: main.c $(PARSER_FILE)
-	@echo "Compilando $^..."
-	$(CC) $(CFLAGS) -c -o $@ main.c
-
 # Específica que cada arquivo .o deve ser gerado a partir de seu correspondente .c
-%.o: %.c
+%.o: %.c $(PARSER_FILE)
 # $@ é o alvo atual (arquivo .o)
-# $^ representa a dependência atual (arquivo .c)
-	@echo "Compilando $^..."
-	$(CC) $(CFLAGS) -c -o $@ $^
+# $< representa a primeira dependência (arquivo .c)
+	@echo "Compilando $<..."
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Gera o código do lexer.
 $(LEXER_FILE): lexer.l $(PARSER_FILE)
@@ -45,5 +41,5 @@ $(PARSER_FILE): parser.y
 	bison $(BISONFLAGS) -d $<
 
 clean:
-	rm -f $(EXECUTABLE) $(PARSER_FILE) $(PARSER_FILE:.c=.h) stack.hh $(LEXER_FILE) *.o vgcore.*
+	rm -f $(EXECUTABLE) $(PARSER_FILE) $(PARSER_FILE:.c=.h) $(LEXER_FILE) *.o vgcore.*
 

@@ -40,7 +40,7 @@
 }
 
 . {
-     printf("ERROR: lexer found invalid character: %s\n", yytext);
+     printf("ERRO: lexer encontrou um caracter inválido: %s\n", yytext);
      exit(1);
 }
 

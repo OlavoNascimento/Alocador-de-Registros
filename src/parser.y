@@ -101,7 +101,6 @@
 void yyerror (const char *msg) {
     grafo_destruir(grafo);
     pilha_destruir(conflitos);
-    printf("ERROR: %s\n", msg);
+    printf("Erro: %s\n", msg);
     exit(1);
 }
-

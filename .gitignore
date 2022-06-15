@@ -7,7 +7,6 @@ lexer.y.c
 # Bison
 parser.tab.c
 parser.tab.h
-stack.hh
 
 # Valgrind
 vgcore.*
